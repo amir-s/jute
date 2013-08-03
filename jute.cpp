@@ -124,6 +124,15 @@ void* jValue::as_null() {
 string jValue::as_string() {
 	return deserialize(svalue);
 }
+int jValue::size() {
+	if (type == JARRAY) {
+		return arr.size();
+	}
+	if (type == JOBJECT) {
+		return properties.size();;
+	}
+	return 0;
+}
 jValue jValue::operator[](int i) {
 	if (type == JARRAY) {
 		return arr[i];

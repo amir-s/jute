@@ -33,6 +33,7 @@ namespace jute {
 			bool as_bool();
 			void* as_null();
 			string as_string();
+			int size();
 			jValue operator[](int i);
 			jValue operator[](string s);
 	};
