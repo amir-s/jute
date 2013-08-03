@@ -50,6 +50,7 @@ namespace jute {
 		static jValue json_parse(vector<token> v, int i, int& r);
 		public: 
 		static jValue parse(const string& str);
+		static jValue parse_file(const string& str);
 	};
 }
 #endif

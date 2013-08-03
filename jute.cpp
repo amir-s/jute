@@ -321,4 +321,12 @@ jValue parser::parse(const string& str) {
 	int k;
 	return json_parse(tokenize(str), 0, k);
 }
+jValue parser::parse_file(const string& filename) {
+	ifstream in(filename.c_str());
+	string str = "";
+	string tmp;
+	while (getline(in, tmp)) str += tmp;
+	in.close();
+	return parser::parse(str);
+}
 
