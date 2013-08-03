@@ -8,6 +8,46 @@
 #include "jute.h"
 using namespace std;
 using namespace jute;
+
+string deserialize(const string& ref) {
+	string out = "";
+	for (int i=0;i<ref.length();i++) {
+		if (ref[i] == '\\' && i+1 < ref.length()) {
+			int plus = 2;
+			if (ref[i+1] == '\"') {
+				out += '"';
+			}else if (ref[i+1] == '\\') {
+				out += '\\';
+			}else if (ref[i+1] == '/') {
+				out += '/';
+			}else if (ref[i+1] == 'b') {
+				out += '\b';
+			}else if (ref[i+1] == 'f') {
+				out += '\f';
+			}else if (ref[i+1] == 'n') {
+				out += '\n';
+			}else if (ref[i+1] == 'r') {
+				out += '\r';
+			}else if (ref[i+1] == 't') {
+				out += '\t';
+			}else if(ref[i+1] == 'u' && i+5 < ref.length()) {
+				unsigned long long v = 0;
+				for (int j=0;j<4;j++) {
+					v *= 16;
+					if (ref[i+2+j] <= '9' && ref[i+2+j] >= '0') v += ref[i+2+j]-'0';
+					if (ref[i+2+j] <= 'f' && ref[i+2+j] >= 'a') v += ref[i+2+j]-'a'+10;
+				}
+				out += (char)v;
+				plus = 6;
+			}
+			i += plus-1;
+			continue;
+		}
+		out += ref[i];
+	}
+	return out;
+}
+
 string jValue::makesp(int d) {
 	string s = "";
 	while (d--) s += "  ";
@@ -82,7 +122,7 @@ void* jValue::as_null() {
 	return NULL;
 }
 string jValue::as_string() {
-	return svalue;
+	return deserialize(svalue);
 }
 jValue jValue::operator[](int i) {
 	if (type == JARRAY) {
