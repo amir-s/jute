@@ -22,6 +22,7 @@ namespace jute {
 			string to_string_d(int);
 		public:
 			jValue(jType);
+            jValue();
 			string to_string();
 			jType get_type();
 			void set_type(jType);

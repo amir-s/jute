@@ -77,7 +77,10 @@ string jValue::to_string_d(int d) {
 	}
 	return "##";
 }
-jValue::jValue(jType tp = JUNKNOWN) {
+jValue::jValue() {
+    jType tp = JUNKNOWN;
+}
+jValue::jValue(jType tp) {
 	this->type = tp;
 }
 
