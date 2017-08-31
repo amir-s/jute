@@ -21,8 +21,8 @@ namespace jute {
 			vector<jValue> arr;
 			string to_string_d(int);
 		public:
-			jValue(jType);
             jValue();
+			jValue(jType);
 			string to_string();
 			jType get_type();
 			void set_type(jType);
