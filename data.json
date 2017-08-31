@@ -15,8 +15,8 @@
         {
             "done": true
         },
-		{
-			"control_chars": "here is \\n: \nand it is tab: \t!\nsupports \" and other control chars\n"
-		}
+        {
+            "control_chars": "here is \\n: \nand it is tab: \t!\nsupports \" and other control chars\n"
+        }
     ]
 }
