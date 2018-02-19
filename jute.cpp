@@ -11,7 +11,7 @@ using namespace jute;
 
 string deserialize(const string& ref) {
   string out = "";
-  for (int i=0;i<ref.length();i++) {
+  for (size_t i=0;i<ref.length();i++) {
     if (ref[i] == '\\' && i+1 < ref.length()) {
       int plus = 2;
       if (ref[i+1] == '\"') {
@@ -60,7 +60,7 @@ string jValue::to_string_d(int d) {
   if (type == JNULL)     return "null";
   if (type == JOBJECT) {
     string s = string("{\n");
-    for (int i=0;i<properties.size();i++) {
+    for (size_t i=0;i<properties.size();i++) {
       s += makesp(d) + string("\"") + properties[i].first + string("\": ") + properties[i].second.to_string_d(d+1) + string(i==properties.size()-1?"":",") + string("\n");
     }
     s += makesp(d-1) + string("}");
@@ -68,7 +68,7 @@ string jValue::to_string_d(int d) {
   }
   if (type == JARRAY) {
     string s = "[";
-    for (int i=0;i<arr.size();i++) {
+    for (size_t i=0;i<arr.size();i++) {
       if (i) s += ", ";
       s += arr[i].to_string_d(d+1);
     }
@@ -159,14 +159,14 @@ bool parser::is_whitespace(const char c) {
   return string(" \n\r  ").find(c) != string::npos;
 }
 int parser::next_whitespace(const string& source, int i) {
-  while (i<source.length()) {
+  while (i < (int)source.length()) {
     if (source[i] == '"') {
       i++;
-      while (i < source.length() && (source[i] != '"' || source[i-1] == '\\')) i++;
+      while (i < (int)source.length() && (source[i] != '"' || source[i-1] == '\\')) i++;
     }
     if (source[i] == '\'') {
       i++;
-      while (i < source.length() && (source[i] != '\'' || source[i-1] == '\\')) i++;
+      while (i < (int)source.length() && (source[i] != '\'' || source[i-1] == '\\')) i++;
     }
     if (is_whitespace(source[i])) return i;
     i++;
@@ -174,7 +174,7 @@ int parser::next_whitespace(const string& source, int i) {
   return source.length();
 }
 int parser::skip_whitespaces(const string& source, int i) {
-  while (i < source.length()) {
+  while (i < (int)source.length()) {
     if (!is_whitespace(source[i])) return i;
     i++;
   }
@@ -189,18 +189,17 @@ vector<parser::token> parser::tokenize(string source) {
     int next = next_whitespace(source, index);
     string str = source.substr(index, next-index);
     
-    int k=0;
-    int t=-1;
+    size_t k = 0;
     while (k < str.length()) {
       if (str[k] == '"') {
-        int tmp_k = k+1;
+        size_t tmp_k = k+1;
         while (tmp_k < str.length() && (str[tmp_k] != '"' || str[tmp_k-1] == '\\')) tmp_k++;
         tokens.push_back(token(str.substr(k+1, tmp_k-k-1), STRING));
         k = tmp_k+1;
         continue;
       }
       if (str[k] == '\'') {
-        int tmp_k = k+1;
+        size_t tmp_k = k+1;
         while (tmp_k < str.length() && (str[tmp_k] != '\'' || str[tmp_k-1] == '\\')) tmp_k++;
         tokens.push_back(token(str.substr(k+1, tmp_k-k-1), STRING));
         k = tmp_k+1;
@@ -252,7 +251,7 @@ vector<parser::token> parser::tokenize(string source) {
         continue;
       }
       if (str[k] == '-' || (str[k] <= '9' && str[k] >= '0')) {
-        int tmp_k = k;
+        size_t tmp_k = k;
         if (str[tmp_k] == '-') tmp_k++;
         while (tmp_k < str.size() && ((str[tmp_k] <= '9' && str[tmp_k] >= '0') || str[tmp_k] == '.')) tmp_k++;
         tokens.push_back(token(str.substr(k, tmp_k-k), NUMBER));
