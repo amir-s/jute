@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/amir-s/jute">
-    <img src="juto.svg" alt="jute.svg">
+    <img src="jute.svg" alt="jute.svg">
   </a>
 </p>
 <br>
@@ -74,8 +74,8 @@ int main () {
 
 ```
 
-<h1>Note:<h1>
+<h1>Note:</h1>
 <br>
 
 This version is not providing error checking. All functions assume the input string is in valid format of JSON. Also number format checking is poor.
-Improvements are welcome. Read the source code; it is just about 300 LOC :simple_smile:.
+Improvements are welcome. Read the source code; it is just about 300 LOC  :simple_smile:.
