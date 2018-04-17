@@ -1,15 +1,15 @@
 <p align="center">
   <a href="https://github.com/amir-s/jute">
-    <img src"juto.svg" alt="jute.svg">
+    <img src="juto.svg" alt="jute.svg">
   </a>
 </p>
 <br>
-<br>
-<h3 aling="center">Very simple JSON parser for c++</h3>
+<h3 align="center">Very simple JSON parser for c++</h3>
 <br>
 <br>
 
-<h3data.json:</h3>
+<h3>data.json:</h3>
+<br>
 
 ```JSON
 
