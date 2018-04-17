@@ -40,7 +40,6 @@
 <br>
 
 ```C++
-
 #include <iostream>
 #include <vector>
 #include <map>
