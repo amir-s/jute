@@ -113,3 +113,6 @@ int main () {
 
 This version is not providing error checking. All functions assume the input string is in valid format of JSON. Also number format checking is poor.
 Improvements are welcome. Read the source code; it is just about 300 LOC  :smile:
+
+License: [MIT](https://opensource.org/licenses/MIT)
+======
