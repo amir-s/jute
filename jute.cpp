@@ -156,7 +156,7 @@ struct parser::token {
   token(string value="",token_type type=UNKNOWN): value(value), type(type) {}
 };
 bool parser::is_whitespace(const char c) {
-  return string(" \n\r  ").find(c) != string::npos;
+  return isspace(c);
 }
 int parser::next_whitespace(const string& source, int i) {
   while (i < (int)source.length()) {
