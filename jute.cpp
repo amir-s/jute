@@ -129,10 +129,10 @@ string jValue::as_string() {
 }
 int jValue::size() {
   if (type == JARRAY) {
-    return arr.size();
+    return (int)arr.size();
   }
   if (type == JOBJECT) {
-    return properties.size();;
+    return (int)properties.size();;
   }
   return 0;
 }
@@ -171,7 +171,7 @@ int parser::next_whitespace(const string& source, int i) {
     if (is_whitespace(source[i])) return i;
     i++;
   }
-  return source.length();
+  return (int)source.length();
 }
 int parser::skip_whitespaces(const string& source, int i) {
   while (i < (int)source.length()) {

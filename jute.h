@@ -8,35 +8,35 @@
 #include <sstream>
 #include <fstream>
 #include <cstring>
-using namespace std;
+
 namespace jute {
   enum jType {JSTRING, JOBJECT, JARRAY, JBOOLEAN, JNUMBER, JNULL, JUNKNOWN};
   class jValue {
     private:
-      string makesp(int);
-      string svalue;
+      std::string makesp(int);
+      std::string svalue;
       jType type;
-      vector<pair<string, jValue> > properties;
-      map<string, int> mpindex;
-      vector<jValue> arr;
-      string to_string_d(int);
+      std::vector<std::pair<std::string, jValue> > properties;
+      std::map<std::string, size_t> mpindex;
+      std::vector<jValue> arr;
+      std::string to_string_d(int);
     public:
       jValue();
       jValue(jType);
-      string to_string();
+      std::string to_string();
       jType get_type();
       void set_type(jType);
-      void add_property(string key, jValue v);
+      void add_property(std::string key, jValue v);
       void add_element(jValue v);
-      void set_string(string s);
+      void set_string(std::string s);
       int as_int();
       double as_double();
       bool as_bool();
       void* as_null();
-      string as_string();
+      std::string as_string();
       int size();
       jValue operator[](int i);
-      jValue operator[](string s);
+      jValue operator[](std::string s);
   };
 
   class parser {
@@ -45,14 +45,14 @@ namespace jute {
 
     struct token;
     static bool is_whitespace(const char c);
-    static int next_whitespace(const string& source, int i);
-    static int skip_whitespaces(const string& source, int i);
+    static int next_whitespace(const std::string& source, int i);
+    static int skip_whitespaces(const std::string& source, int i);
 
-    static vector<token> tokenize(string source);
-    static jValue json_parse(vector<token> v, int i, int& r);
+    static std::vector<token> tokenize(std::string source);
+    static jValue json_parse(std::vector<token> v, int i, int& r);
     public: 
-    static jValue parse(const string& str);
-    static jValue parse_file(const string& str);
+    static jValue parse(const std::string& str);
+    static jValue parse_file(const std::string& str);
   };
 }
 #endif
