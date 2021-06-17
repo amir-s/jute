@@ -69,7 +69,6 @@ string jValue::makesp(int d) {
 }
 
 string jValue::to_string_d(int d) {
-
   switch (type) { //These probably don't need any breaks since it will jump out of scope since they return
     case JSTRING:   return string("\"") + svalue + string("\"");
     case JNUMBER:   return svalue;
@@ -164,13 +163,11 @@ string jValue::as_string() {
 }
 
 int jValue::size() {
-  if (type == JARRAY) {
-    return (int)arr.size();
+  switch (type) {
+    case JARRAY:  return (int)arr.size();
+    case JOBJECT: return (int)properties.size();
+    default:      return 0;
   }
-  if (type == JOBJECT) {
-    return (int)properties.size();;
-  }
-  return 0;
 }
 
 jValue jValue::operator[](int i) {
@@ -396,8 +393,7 @@ jValue parser::json_parse(vector<token> v, int i, int& r) {
       return current;
     }
 
-    default:
-      return current;
+    default: return current;
   }
 }
 
