@@ -1,0 +1,15 @@
+# Compiled output
+jute
+*.o
+*.out
+*.dSYM/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Test runner output
+test_jute

@@ -1,38 +1,25 @@
-#include <iostream>
-#include <vector>
-#include <map>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <cstring>
 #include "jute.h"
-using namespace std;
+#include <iostream>
 
-int main () {
-  
-  ifstream in("data.json");
-  string str = "";
-  string tmp;
-  while (getline(in, tmp)) str += tmp;
-  jute::jValue v = jute::parser::parse(str);
-  cout << v.to_string() << endl;
+int main() {
+  // Parse from file (or use jute::parser::parse for inline strings)
+  jute::jValue v = jute::parser::parse_file("data.json");
+  std::cout << v.to_string() << "\n";
 
-  // you can use jute::parser::parse_file("data.json")
-
-  cout << " ------ " << endl;
-  cout << v["examples"][0]["attr"][0]["value"].as_string() << endl;
+  std::cout << " ------ \n";
+  std::cout << v["examples"][0]["attr"][0]["value"].as_string() << "\n";
   if (v["examples"][1]["mixed"][5][1][1].as_bool()) {
-    cout << v["examples"][1]["pie"].as_double() << endl;
-    cout << v["examples"][2].to_string() << endl;
+    std::cout << v["examples"][1]["pie"].as_double() << "\n";
+    std::cout << v["examples"][2].to_string() << "\n";
   }
-  // You can get type of a jValue by calling get_type() function
-  // It returns a jType which can be one of these: 
-  //    {JSTRING, JOBJECT, JARRAY, JBOOLEAN, JNUMBER, JNULL, JUNKNOWN}
-  //
-  //    if (v["examples"][1]["mixed"][5][1][1].get_type() == jute::JBOOLEAN) ...
-  // 
-  // if you use 'as_string' function, all control characters will be deserialized
-  // cout << v["examples"][3]["control_chars"].as_string() << endl;
+
+  // Check type before accessing
+  if (v["examples"][1]["mixed"][5][1][1].get_type() == jute::JBOOLEAN) {
+    std::cout << "(confirmed boolean)\n";
+  }
+
+  // control chars: as_string() deserializes escape sequences
+  // std::cout << v["examples"][3]["control_chars"].as_string() << "\n";
+
   return 0;
 }
-

@@ -1,118 +1,90 @@
 <p align="center">
   <a href="https://github.com/amir-s/jute">
-    <img src="jute.svg" alt="jute.svg">
+    <img src="jute.svg" alt="jute">
   </a>
 </p>
-<br>
-<h3 align="center">Very simple JSON parser for c++</h3>
-<br>
-<br>
 
-<h3>data.json:</h3>
-<br>
+## Very simple JSON parser for C++
 
-```JSON
-{
-   "examples": [
-      {
-         "tag_name": "a",
-         "attr": [
-            {
-               "key": "href",
-               "value": "http://amir.saboury.net"
-            },
-            {
-               "key": "target",
-               "value": "_blank"
-            }
-         ]
-      },
-      {
-         "this_is": [
-            "array",
-            "of",
-            "strings"
-         ],
-         "number_array": [
-            1,
-            2,
-            4,
-            8,
-            16
-         ],
-         "pie": 3.14,
-         "boolean": true,
-         "bug": null,
-         "mixed": [
-            1,
-            2,
-            {
-               "test1": -1.2345,
-               "test2": false
-            },
-            null,
-            0.4,
-            [
-               "nested",
-               [
-                  "array",
-                  true
-               ]
-            ],
-            "end of story!"
-         ]
-      },
-      {
-         "done": true
-      }
-   ]
-}
+A single header + implementation file JSON parser. Drop `jute.h` and `jute.cpp` into your project and go.
+
+## Build
+
+```bash
+make        # builds the example binary
+make test   # builds and runs the test suite
+make clean  # removes compiled binaries
 ```
-<br>
-<br>
 
-<h3>example "main.cpp" file</h3>
-<br>
+Or compile manually:
 
-```C++
-#include <iostream>
-#include <vector>
-#include <map>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <cstring>
+```bash
+g++ -std=c++17 -o jute main.cpp jute.cpp
+```
+
+## Quick start
+
+```cpp
 #include "jute.h"
-using namespace std;
 
-int main () {
-    ifstream in("data.json");
-    string str = "";
-    string tmp;
-    while (getline(in, tmp)) str += tmp;
-    jute::jValue v = jute::parser::parse(str);
-    cout << v.to_string() << endl;
-    cout << " ------ " << endl;
-    cout << v["examples"][0]["attr"][0]["value"].as_string() << endl;
-    if (v["examples"][1]["mixed"][5][1][1].as_bool()) {
-        cout << v["examples"][1]["pie"].as_double() << endl;
-        cout << v["examples"][2].to_string() << endl;
-    }
-    // You can get type of a jValue by calling its get_type() function
-    // It returns a jType which can be one of these:
-    //    {JSTRING, JOBJECT, JARRAY, JBOOLEAN, JNUMBER, JNULL, JUNKNOWN}
-    //
-    //    if (v["examples"][1]["mixed"][5][1][1].get_type() == jute::JBOOLEAN) ...
-    return 0;
+int main() {
+    // Parse a JSON string
+    jute::jValue v = jute::parser::parse(R"({"name": "jute", "version": 1})");
+    std::cout << v["name"].as_string() << "\n"; // jute
+    std::cout << v["version"].as_int() << "\n"; // 1
+
+    // Or load from a file
+    jute::jValue file_v = jute::parser::parse_file("data.json");
+    std::cout << file_v.to_string() << "\n";
 }
-
 ```
 
-<h1>Note:</h1>
-<br>
+## API reference
 
-This version is not providing error checking. All functions assume the input string is in valid format of JSON. Also number format checking is poor.
-Improvements are welcome. Read the source code; it is just about 300 LOC  :smile:
+All accessor methods are `const` — `jValue` is designed as a **read-only** view into parsed JSON.
+
+| Method | Returns | Description |
+|---|---|---|
+| `get_type()` | `jType` | One of `JSTRING`, `JOBJECT`, `JARRAY`, `JBOOLEAN`, `JNUMBER`, `JNULL`, `JUNKNOWN` |
+| `as_string()` | `std::string` | String value with escape sequences deserialized |
+| `as_int()` | `int` | Number as integer |
+| `as_double()` | `double` | Number as double |
+| `as_bool()` | `bool` | Boolean value |
+| `as_null()` | `void*` | Returns `nullptr` |
+| `size()` | `size_t` | Number of array elements or object properties |
+| `operator[](size_t i)` | `const jValue&` | Access array element by index |
+| `operator[](string s)` | `const jValue&` | Access object property by key |
+| `to_string()` | `std::string` | Pretty-print back to JSON |
+
+Accessing a missing key or out-of-bounds index returns a `jValue` with type `JUNKNOWN` (no crash).
+
+## `data.json` example
+
+```json
+{
+  "examples": [
+    {
+      "tag_name": "a",
+      "attr": [
+        { "key": "href",   "value": "http://example.com" },
+        { "key": "target", "value": "_blank" }
+      ]
+    },
+    {
+      "this_is": ["array", "of", "strings"],
+      "number_array": [1, 2, 4, 8, 16],
+      "pie": 3.14,
+      "boolean": true,
+      "bug": null,
+      "mixed": [1, 2, {"test1": -1.2345, "test2": false}, null, 0.4, ["nested", ["array", true]], "end of story!"]
+    },
+    { "done": true }
+  ]
+}
+```
+
+## Note
+
+This library does not perform error checking — it assumes the input is valid JSON. For production use, consider a more complete library. PRs are welcome!
 
 License: [MIT](https://opensource.org/licenses/MIT)
-======
