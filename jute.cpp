@@ -1,46 +1,67 @@
-#include <iostream>
-#include <vector>
-#include <map>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <cstring>
 #include "jute.h"
-using namespace std;
-using namespace jute;
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
-string deserialize(const string& ref) {
-  string out = "";
-  for (size_t i=0;i<ref.length();i++) {
-    if (ref[i] == '\\' && i+1 < ref.length()) {
+namespace jute {
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+static std::string deserialize(const std::string &ref) {
+  std::string out;
+  for (size_t i = 0; i < ref.length(); i++) {
+    if (ref[i] == '\\' && i + 1 < ref.length()) {
       int plus = 2;
-      if (ref[i+1] == '\"') {
+      switch (ref[i + 1]) {
+      case '"':
         out += '"';
-      }else if (ref[i+1] == '\\') {
+        break;
+      case '\\':
         out += '\\';
-      }else if (ref[i+1] == '/') {
+        break;
+      case '/':
         out += '/';
-      }else if (ref[i+1] == 'b') {
+        break;
+      case 'b':
         out += '\b';
-      }else if (ref[i+1] == 'f') {
+        break;
+      case 'f':
         out += '\f';
-      }else if (ref[i+1] == 'n') {
+        break;
+      case 'n':
         out += '\n';
-      }else if (ref[i+1] == 'r') {
+        break;
+      case 'r':
         out += '\r';
-      }else if (ref[i+1] == 't') {
+        break;
+      case 't':
         out += '\t';
-      }else if(ref[i+1] == 'u' && i+5 < ref.length()) {
-        unsigned long long v = 0;
-        for (int j=0;j<4;j++) {
-          v *= 16;
-          if (ref[i+2+j] <= '9' && ref[i+2+j] >= '0') v += ref[i+2+j]-'0';
-          if (ref[i+2+j] <= 'f' && ref[i+2+j] >= 'a') v += ref[i+2+j]-'a'+10;
+        break;
+      case 'u':
+        if (i + 5 < ref.length()) {
+          unsigned long v = 0;
+          for (int j = 0; j < 4; j++) {
+            v *= 16;
+            char c = ref[i + 2 + j];
+            if (c >= '0' && c <= '9')
+              v += c - '0';
+            else if (c >= 'a' && c <= 'f')
+              v += c - 'a' + 10;
+            else if (c >= 'A' && c <= 'F')
+              v += c - 'A' + 10;
+          }
+          out += static_cast<char>(v);
+          plus = 6;
         }
-        out += (char)v;
-        plus = 6;
+        break;
       }
-      i += plus-1;
+      i += plus - 1;
       continue;
     }
     out += ref[i];
@@ -48,296 +69,353 @@ string deserialize(const string& ref) {
   return out;
 }
 
-string jValue::makesp(int d) {
-  string s = "";
-  while (d--) s += "  ";
+// ---------------------------------------------------------------------------
+// jValue
+// ---------------------------------------------------------------------------
+
+// Static sentinel returned for missing keys / out-of-bounds indices.
+static const jValue UNKNOWN_VALUE;
+
+jValue::jValue() : type(JUNKNOWN) {}
+jValue::jValue(jType tp) : type(tp) {}
+
+std::string jValue::makesp(int d) const {
+  std::string s;
+  while (d--)
+    s += "  ";
   return s;
 }
-string jValue::to_string_d(int d) {
-  if (type == JSTRING)   return string("\"") + svalue + string("\"");
-  if (type == JNUMBER)   return svalue;
-  if (type == JBOOLEAN)  return svalue;
-  if (type == JNULL)     return "null";
-  if (type == JOBJECT) {
-    string s = string("{\n");
-    for (size_t i=0;i<properties.size();i++) {
-      s += makesp(d) + string("\"") + properties[i].first + string("\": ") + properties[i].second.to_string_d(d+1) + string(i==properties.size()-1?"":",") + string("\n");
+
+std::string jValue::to_string_d(int d) const {
+  switch (type) {
+  case JSTRING:
+    return std::string("\"") + svalue + "\"";
+  case JNUMBER:
+    return svalue;
+  case JBOOLEAN:
+    return svalue;
+  case JNULL:
+    return "null";
+
+  case JOBJECT: {
+    std::string s = "{\n";
+    for (size_t i = 0; i < properties.size(); i++) {
+      s += makesp(d) + "\"" + properties[i].first +
+           "\": " + properties[i].second.to_string_d(d + 1) +
+           (i + 1 < properties.size() ? "," : "") + "\n";
     }
-    s += makesp(d-1) + string("}");
+    s += makesp(d - 1) + "}";
     return s;
   }
-  if (type == JARRAY) {
-    string s = "[";
-    for (size_t i=0;i<arr.size();i++) {
-      if (i) s += ", ";
-      s += arr[i].to_string_d(d+1);
+
+  case JARRAY: {
+    std::string s = "[";
+    for (size_t i = 0; i < arr.size(); i++) {
+      if (i)
+        s += ", ";
+      s += arr[i].to_string_d(d + 1);
     }
     s += "]";
     return s;
   }
-  return "##";
-}
-jValue::jValue() {
-  this->type = JUNKNOWN;
-}
-jValue::jValue(jType tp) {
-  this->type = tp;
+
+  default:
+    return "##";
+  }
 }
 
-string jValue::to_string() {
-  return to_string_d(1);
-}
-jType jValue::get_type() {
-  return type;
-}
-void jValue::set_type(jType tp) {
-  type = tp;
-}
-void jValue::add_property(string key, jValue v) {
+std::string jValue::to_string() const { return to_string_d(1); }
+
+jType jValue::get_type() const { return type; }
+
+void jValue::set_type(jType tp) { type = tp; }
+
+void jValue::add_property(const std::string &key, jValue v) {
   mpindex[key] = properties.size();
-  properties.push_back(make_pair(key, v));
+  properties.push_back(std::make_pair(key, v));
 }
-void jValue::add_element(jValue v) {
-  arr.push_back(v);
-}
-void jValue::set_string(string s) {
-  svalue = s;
-}
-int jValue::as_int() {
-  stringstream ss;
+
+void jValue::add_element(jValue v) { arr.push_back(v); }
+
+void jValue::set_string(const std::string &s) { svalue = s; }
+
+int jValue::as_int() const {
+  std::stringstream ss;
   ss << svalue;
   int k;
   ss >> k;
   return k;
 }
-double jValue::as_double() {
-  stringstream ss;
+
+double jValue::as_double() const {
+  std::stringstream ss;
   ss << svalue;
   double k;
   ss >> k;
   return k;
 }
-bool jValue::as_bool() {
-  if (svalue == "true") return true;
-  return false;
-}
-void* jValue::as_null() {
-  return NULL;
-}
-string jValue::as_string() {
-  return deserialize(svalue);
-}
-int jValue::size() {
-  if (type == JARRAY) {
-    return (int)arr.size();
+
+bool jValue::as_bool() const { return svalue == "true"; }
+
+void *jValue::as_null() const { return nullptr; }
+
+std::string jValue::as_string() const { return deserialize(svalue); }
+
+size_t jValue::size() const {
+  switch (type) {
+  case JARRAY:
+    return arr.size();
+  case JOBJECT:
+    return properties.size();
+  default:
+    return 0;
   }
-  if (type == JOBJECT) {
-    return (int)properties.size();;
-  }
-  return 0;
-}
-jValue jValue::operator[](int i) {
-  if (type == JARRAY) {
-    return arr[i];
-  }
-  if (type == JOBJECT) {
-    return properties[i].second;
-  }
-  return jValue();
-}
-jValue jValue::operator[](string s) {
-  if (mpindex.find(s) == mpindex.end()) return jValue();
-  return properties[mpindex[s]].second;
 }
 
-struct parser::token {
-  string value;
-  token_type type;
-  token(string value="",token_type type=UNKNOWN): value(value), type(type) {}
-};
-bool parser::is_whitespace(const char c) {
-  return isspace(c);
+const jValue &jValue::operator[](size_t i) const {
+  switch (type) {
+  case JARRAY:
+    if (i < arr.size())
+      return arr[i];
+    break;
+  case JOBJECT:
+    if (i < properties.size())
+      return properties[i].second;
+    break;
+  default:
+    break;
+  }
+  return UNKNOWN_VALUE;
 }
-int parser::next_whitespace(const string& source, int i) {
-  while (i < (int)source.length()) {
+
+const jValue &jValue::operator[](const std::string &s) const {
+  auto it = mpindex.find(s);
+  if (it == mpindex.end())
+    return UNKNOWN_VALUE;
+  return properties[it->second].second;
+}
+
+// ---------------------------------------------------------------------------
+// parser
+// ---------------------------------------------------------------------------
+
+struct parser::token {
+  std::string value;
+  token_type type;
+  token(std::string v = "", token_type t = UNKNOWN)
+      : value(std::move(v)), type(t) {}
+};
+
+bool parser::is_whitespace(char c) {
+  return isspace(static_cast<unsigned char>(c));
+}
+
+int parser::next_whitespace(const std::string &source, int i) {
+  while (i < static_cast<int>(source.length())) {
     if (source[i] == '"') {
       i++;
-      while (i < (int)source.length() && (source[i] != '"' || source[i-1] == '\\')) i++;
+      while (i < static_cast<int>(source.length()) &&
+             (source[i] != '"' || source[i - 1] == '\\'))
+        i++;
     }
     if (source[i] == '\'') {
       i++;
-      while (i < (int)source.length() && (source[i] != '\'' || source[i-1] == '\\')) i++;
+      while (i < static_cast<int>(source.length()) &&
+             (source[i] != '\'' || source[i - 1] == '\\'))
+        i++;
     }
-    if (is_whitespace(source[i])) return i;
+    if (is_whitespace(source[i]))
+      return i;
     i++;
   }
-  return (int)source.length();
+  return static_cast<int>(source.length());
 }
-int parser::skip_whitespaces(const string& source, int i) {
-  while (i < (int)source.length()) {
-    if (!is_whitespace(source[i])) return i;
+
+int parser::skip_whitespaces(const std::string &source, int i) {
+  while (i < static_cast<int>(source.length())) {
+    if (!is_whitespace(source[i]))
+      return i;
     i++;
   }
   return -1;
 }
 
-vector<parser::token> parser::tokenize(string source) {
-  source += " ";
-  vector<token> tokens;
+std::vector<parser::token> parser::tokenize(const std::string &source_in) {
+  std::string source = source_in + " ";
+  std::vector<token> tokens;
   int index = skip_whitespaces(source, 0);
   while (index >= 0) {
     int next = next_whitespace(source, index);
-    string str = source.substr(index, next-index);
-    
+    std::string str = source.substr(index, next - index);
+
     size_t k = 0;
     while (k < str.length()) {
-      if (str[k] == '"') {
-        size_t tmp_k = k+1;
-        while (tmp_k < str.length() && (str[tmp_k] != '"' || str[tmp_k-1] == '\\')) tmp_k++;
-        tokens.push_back(token(str.substr(k+1, tmp_k-k-1), STRING));
-        k = tmp_k+1;
+      switch (str[k]) {
+      case '"': {
+        size_t tmp_k = k + 1;
+        while (tmp_k < str.length() &&
+               (str[tmp_k] != '"' || str[tmp_k - 1] == '\\'))
+          tmp_k++;
+        tokens.push_back(token(str.substr(k + 1, tmp_k - k - 1), STRING));
+        k = tmp_k + 1;
         continue;
       }
-      if (str[k] == '\'') {
-        size_t tmp_k = k+1;
-        while (tmp_k < str.length() && (str[tmp_k] != '\'' || str[tmp_k-1] == '\\')) tmp_k++;
-        tokens.push_back(token(str.substr(k+1, tmp_k-k-1), STRING));
-        k = tmp_k+1;
+      case '\'': {
+        size_t tmp_k = k + 1;
+        while (tmp_k < str.length() &&
+               (str[tmp_k] != '\'' || str[tmp_k - 1] == '\\'))
+          tmp_k++;
+        tokens.push_back(token(str.substr(k + 1, tmp_k - k - 1), STRING));
+        k = tmp_k + 1;
         continue;
       }
-      if (str[k] == ',') {
+      case ',':
         tokens.push_back(token(",", COMMA));
         k++;
         continue;
-      }
-      if (str[k] == 't' && k+3 < str.length() && str.substr(k, 4) == "true") {
-        tokens.push_back(token("true", BOOLEAN));
-        k += 4;
-        continue;
-      }
-      if (str[k] == 'f' && k+4 < str.length() && str.substr(k, 5) == "false") {
-        tokens.push_back(token("false", BOOLEAN));
-        k += 5;
-        continue;
-      }
-      if (str[k] == 'n' && k+3 < str.length() && str.substr(k, 4) == "null") {
-        tokens.push_back(token("null", NUL));
-        k += 4;
-        continue;
-      }
-      if (str[k] == '}') {
-        tokens.push_back(token("}", CROUSH_CLOSE));
-        k++;
-        continue;
-      }
-      if (str[k] == '{') {
+      case '{':
         tokens.push_back(token("{", CROUSH_OPEN));
         k++;
         continue;
-      }
-      if (str[k] == ']') {
-        tokens.push_back(token("]", BRACKET_CLOSE));
+      case '}':
+        tokens.push_back(token("}", CROUSH_CLOSE));
         k++;
         continue;
-      }
-      if (str[k] == '[') {
+      case '[':
         tokens.push_back(token("[", BRACKET_OPEN));
         k++;
         continue;
-      }
-      if (str[k] == ':') {
+      case ']':
+        tokens.push_back(token("]", BRACKET_CLOSE));
+        k++;
+        continue;
+      case ':':
         tokens.push_back(token(":", COLON));
         k++;
         continue;
+      case 't':
+        if (k + 3 < str.length() && str.substr(k, 4) == "true") {
+          tokens.push_back(token("true", BOOLEAN));
+          k += 4;
+          continue;
+        }
+        break;
+      case 'f':
+        if (k + 4 < str.length() && str.substr(k, 5) == "false") {
+          tokens.push_back(token("false", BOOLEAN));
+          k += 5;
+          continue;
+        }
+        break;
+      case 'n':
+        if (k + 3 < str.length() && str.substr(k, 4) == "null") {
+          tokens.push_back(token("null", NUL));
+          k += 4;
+          continue;
+        }
+        break;
+      default:
+        break;
       }
-      if (str[k] == '-' || (str[k] <= '9' && str[k] >= '0')) {
+
+      if (str[k] == '-' || (str[k] >= '0' && str[k] <= '9')) {
         size_t tmp_k = k;
-        if (str[tmp_k] == '-') tmp_k++;
-        while (tmp_k < str.size() && ((str[tmp_k] <= '9' && str[tmp_k] >= '0') || str[tmp_k] == '.')) tmp_k++;
-        tokens.push_back(token(str.substr(k, tmp_k-k), NUMBER));
+        if (str[tmp_k] == '-')
+          tmp_k++;
+        while (tmp_k < str.size() &&
+               ((str[tmp_k] >= '0' && str[tmp_k] <= '9') || str[tmp_k] == '.'))
+          tmp_k++;
+        tokens.push_back(token(str.substr(k, tmp_k - k), NUMBER));
         k = tmp_k;
         continue;
       }
+
       tokens.push_back(token(str.substr(k), UNKNOWN));
       k = str.length();
     }
-    
+
     index = skip_whitespaces(source, next);
   }
-  // for (int i=0;i<tokens.size();i++) {
-    // cout << i << " " << tokens[i].value << endl;
-  // }
   return tokens;
 }
-  
 
-jValue parser::json_parse(vector<token> v, int i, int& r) {
+jValue parser::json_parse(const std::vector<token> &v, int i, int &r) {
   jValue current;
-  if (v[i].type == CROUSH_OPEN) {
+
+  switch (v[i].type) {
+  case CROUSH_OPEN: {
     current.set_type(JOBJECT);
-    int k = i+1;
+    int k = i + 1;
     while (v[k].type != CROUSH_CLOSE) {
-      string key = v[k].value;
-      k+=2; // k+1 should be ':'
+      std::string key = v[k].value;
+      k += 2; // skip key and ':'
       int j = k;
       jValue vv = json_parse(v, k, j);
       current.add_property(key, vv);
       k = j;
-      if (v[k].type == COMMA) k++;
+      if (v[k].type == COMMA)
+        k++;
     }
-    r = k+1;
+    r = k + 1;
     return current;
   }
-  if (v[i].type == BRACKET_OPEN) {
+
+  case BRACKET_OPEN: {
     current.set_type(JARRAY);
-    int k = i+1;
+    int k = i + 1;
     while (v[k].type != BRACKET_CLOSE) {
       int j = k;
       jValue vv = json_parse(v, k, j);
       current.add_element(vv);
       k = j;
-      if (v[k].type == COMMA) k++;
+      if (v[k].type == COMMA)
+        k++;
     }
-    r = k+1;
+    r = k + 1;
     return current;
   }
-  if (v[i].type == NUMBER) {
+
+  case NUMBER:
     current.set_type(JNUMBER);
     current.set_string(v[i].value);
-    r = i+1;
+    r = i + 1;
     return current;
-  }
-  if (v[i].type == STRING) {
+
+  case STRING:
     current.set_type(JSTRING);
     current.set_string(v[i].value);
-    r = i+1;
+    r = i + 1;
     return current;
-  }
-  if (v[i].type == BOOLEAN) {
+
+  case BOOLEAN:
     current.set_type(JBOOLEAN);
     current.set_string(v[i].value);
-    r = i+1;
+    r = i + 1;
     return current;
-  }
-  if (v[i].type == NUL) {
+
+  case NUL:
     current.set_type(JNULL);
     current.set_string("null");
-    r = i+1;
+    r = i + 1;
+    return current;
+
+  default:
     return current;
   }
-  return current;
 }
 
-jValue parser::parse(const string& str) {
+jValue parser::parse(const std::string &str) {
   int k;
   return json_parse(tokenize(str), 0, k);
 }
-jValue parser::parse_file(const string& filename) {
-  ifstream in(filename.c_str());
-  string str = "";
-  string tmp;
-  while (getline(in, tmp)) str += tmp;
+
+jValue parser::parse_file(const std::string &filename) {
+  std::ifstream in(filename);
+  std::string str, tmp;
+  while (std::getline(in, tmp))
+    str += tmp;
   in.close();
-  return parser::parse(str);
+  return parse(str);
 }
 
+} // namespace jute
